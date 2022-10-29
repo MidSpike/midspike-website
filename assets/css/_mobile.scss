@@ -1,0 +1,32 @@
+@media only screen and (max-width: 1000px) {
+    :root {
+        --navbar-height: 5rem !important;
+    }
+
+    nav#nav {
+        .navbar {
+            .navbar-menu {
+                justify-content: flex-start !important;
+                gap: 1rem !important;
+                overflow: auto !important;
+                margin: 0px 1rem !important;
+                padding: 0.5rem 0px !important;
+                .navbar-menu-link {
+                    padding: 0rem 1rem !important;
+                }
+            }
+            .navbar-widgets {
+                padding-left: 0px !important;
+                padding-right: 0px !important;
+            }
+        }
+    }
+
+    main#main {
+        justify-content: flex-start;
+    }
+
+    .hide-on-mobile {
+        display: none !important;
+    }
+}
