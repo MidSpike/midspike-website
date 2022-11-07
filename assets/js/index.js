@@ -22,6 +22,16 @@ document.querySelectorAll('[data-navigation-action]').forEach((element) => {
         if (!action) return;
 
         switch (action) {
+            case 'toggle_visibility': {
+                const main = document.querySelector('#main');
+                if (!main) return;
+
+                const isVisible = main.getAttribute('data-visibility-mode');
+                main.setAttribute('data-visibility-mode', isVisible === 'visible' ? 'hidden' : 'visible');
+
+                break;
+            }
+
             case 'toggle_theme': {
                 const current_theme = document.documentElement.getAttribute('data-theme') ?? 'dark';
                 document.documentElement.setAttribute('data-theme', current_theme === 'dark' ? 'light' : 'dark');
