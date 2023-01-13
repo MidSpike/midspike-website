@@ -290,7 +290,7 @@ async function main() {
         wireFrame.addPoint(point);
     });
 
-    for (let i = 1; i <= 25; i++) {
+    for (let i = 1; i <= 10; i++) {
         wireFrame.addPoints(i);
         await delay(5_000);
     }
