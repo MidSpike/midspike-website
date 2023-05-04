@@ -21,10 +21,14 @@
 
     --navbar-height: 4rem;
 
-    &[data-theme=light] {
+    & > body[data-theme=light] {
         --theme-color: #ffffff;
         --theme-color-inverted: #000000;
     }
+}
+
+html {
+    background-color: #000000;
 }
 
 body {
@@ -59,6 +63,7 @@ body {
 }
 
 section#under-construction {
+    flex-shrink: 0;
     display: grid;
     place-items: center;
     background: repeating-linear-gradient(45deg, #FFFF00, #FFFF00 2rem, #000000 2rem, #000000 4rem);
@@ -83,6 +88,7 @@ section#under-construction {
 }
 
 nav#nav {
+    flex-shrink: 0;
     z-index: 9999;
     .navbar {
         box-shadow: 0px 0px 0.5rem 0px var(--theme-color-accent);
@@ -203,12 +209,13 @@ nav#nav {
     }
 }
 
-main {
+main#main {
+    flex-shrink: 1;
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: unset;
-    justify-content: flex-end;
+    justify-content: flex-start;
     flex-grow: 1;
     padding: 1rem;
     overflow: auto;
@@ -232,7 +239,7 @@ main {
 .homepage-heading {
     color: var(--theme-color-accent);
     margin: 1rem 0rem;
-    font-size: 2.5rem;
+    font-size: 2.75rem;
     font-weight: 500;
     font-family: 'MidSpike';
     text-align: center;
@@ -241,7 +248,7 @@ main {
 .homepage-subheading {
     color: var(--theme-color-accent);
     margin: 1rem 0rem;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 500;
     font-family: 'MidSpike';
     text-align: center;

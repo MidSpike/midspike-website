@@ -6,6 +6,19 @@
 
 //------------------------------------------------------------//
 
+const default_theme = 'dark';
+
+const user_theme_preference_key = 'user-theme-preference';
+
+//------------------------------------------------------------//
+
+window.addEventListener('load', () => {
+    const user_theme_preference = localStorage.getItem(user_theme_preference_key);
+    if (user_theme_preference) document.body.setAttribute('data-theme', user_theme_preference);
+});
+
+//------------------------------------------------------------//
+
 document.querySelectorAll('[data-navigation-url]').forEach((element) => {
     element.addEventListener('click', (event) => {
         event.preventDefault();
@@ -33,8 +46,13 @@ document.querySelectorAll('[data-navigation-action]').forEach((element) => {
             }
 
             case 'toggle_theme': {
-                const current_theme = document.documentElement.getAttribute('data-theme') ?? 'dark';
-                document.documentElement.setAttribute('data-theme', current_theme === 'dark' ? 'light' : 'dark');
+                const user_theme_preference = localStorage.getItem(user_theme_preference_key);
+
+                const current_theme = user_theme_preference ?? default_theme;
+                const new_theme = current_theme === 'dark' ? 'light' : 'dark';
+                document.body.setAttribute('data-theme', new_theme);
+
+                localStorage.setItem(user_theme_preference_key, new_theme);
 
                 break;
             }
