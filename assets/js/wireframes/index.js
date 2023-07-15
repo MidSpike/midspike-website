@@ -6,20 +6,49 @@
 
 //------------------------------------------------------------//
 
+/**
+ * Used as a pseudo-sleep function.
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
 function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Clamps a value between a minimum and maximum value.
+ * @param {number} val
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
 function clamp(val, min, max) {
     return Math.min(Math.max(val, min), max);
 }
 
+/**
+ * Generates a random number between a minimum and maximum value.
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
 function randomFromInclusiveRange(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 //------------------------------------------------------------//
 
+/**
+ * @typedef {{ x: number, y: number }} TwoDimensionalCoordinate
+ */
+
+/**
+ * Finds the coordinate located between two coordinates at a given delta.
+ * @param {TwoDimensionalCoordinate} pointA
+ * @param {TwoDimensionalCoordinate} pointB
+ * @param {number} delta
+ * @returns {TwoDimensionalCoordinate}
+ */
 function lerpPoint({ x: x1, y: y1 }, { x: x2, y: y2 }, delta) {
     const inverseDelta = 1 - delta;
 
@@ -29,6 +58,14 @@ function lerpPoint({ x: x1, y: y1 }, { x: x2, y: y2 }, delta) {
     };
 }
 
+/**
+ * Locates a coordinate on a quadratic bezier curve at a given delta.
+ * @param {TwoDimensionalCoordinate} start
+ * @param {TwoDimensionalCoordinate} interruption
+ * @param {TwoDimensionalCoordinate} stop
+ * @param {number} delta
+ * @returns {TwoDimensionalCoordinate}
+ */
 function quadraticBezier(start, interruption, stop, delta) {
     const firstPoint = lerpPoint(start, interruption, delta);
     const secondPoint = lerpPoint(interruption, stop, delta);
@@ -36,40 +73,70 @@ function quadraticBezier(start, interruption, stop, delta) {
     return lerpPoint(firstPoint, secondPoint, delta);
 }
 
-function multiBezier(start, points, stop, delta) {
-    let transitoryPoint = start;
+/**
+ * Locates a coordinate on a multi quadratic bezier curve at a given delta.
+ * @param {TwoDimensionalCoordinate} start
+ * @param {TwoDimensionalCoordinate[]} interruptions
+ * @param {TwoDimensionalCoordinate} stop
+ * @param {number} delta
+ * @returns {TwoDimensionalCoordinate}
+ */
+function multiBezier(start, interruptions, stop, delta) {
+    let transitoryCoordinate = start;
 
-    for (const point of points) {
-        transitoryPoint = quadraticBezier(transitoryPoint, point, stop, delta);
+    for (const interruption of interruptions) {
+        transitoryCoordinate = quadraticBezier(transitoryCoordinate, interruption, stop, delta);
     }
 
-    return transitoryPoint;
+    return transitoryCoordinate;
 }
 
 //------------------------------------------------------------//
 
-function relativeBindingBox({ x: pointX, y: pointY }, canvas, size) {
-    const pointA = {
-        x: clamp(pointX - size, 0, canvas.width),
-        y: clamp(pointY - size, 0, canvas.height),
+/**
+ * @typedef {{
+ *  a: TwoDimensionalCoordinate,
+ *  b: TwoDimensionalCoordinate,
+ *  width: number,
+ *  height: number,
+ * }} RelativeBindingBox
+ */
+
+/**
+ * 
+ * @param {TwoDimensionalCoordinate} centerPoint
+ * @param {HTMLCanvasElement} canvas
+ * @param {number} apothem the distance from the center point to the edge of the box
+ * @returns {RelativeBindingBox}
+ */
+function relativeBindingBox({ x: centerPointX, y: centerPointY }, canvas, apothem) {
+    const minimumPoint = {
+        x: clamp(centerPointX - apothem, 0, canvas.width),
+        y: clamp(centerPointY - apothem, 0, canvas.height),
     };
 
-    const pointB = {
-        x: clamp(pointX + size, 0, canvas.width),
-        y: clamp(pointY + size, 0, canvas.height),
+    const maximumPoint = {
+        x: clamp(centerPointX + apothem, 0, canvas.width),
+        y: clamp(centerPointY + apothem, 0, canvas.height),
     };
 
     return {
-        a: pointA,
-        b: pointB,
-        width: pointB.x - pointA.x,
-        height: pointB.y - pointA.y,
+        a: minimumPoint,
+        b: maximumPoint,
+        width: maximumPoint.x - minimumPoint.x,
+        height: maximumPoint.y - minimumPoint.y,
     };
 }
 
 //------------------------------------------------------------//
 
 class Point {
+    /**
+     * @param {HTMLCanvasElement} canvas
+     * @param {number} x
+     * @param {number} y
+     * @param {string} color
+     */
     constructor(canvas, x, y, color) {
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
@@ -78,12 +145,16 @@ class Point {
         this.desiredLocation = { x, y };
         this.desiredBezierPoints = [];
         this.locationDelta = 0;
-        this.locationDeltaLimit = 60; // number of frames required
+        this.locationDeltaLimit = 60; // number of frames to travel to the next location
         this.color = color;
         this.debugColor = '#00aaff';
+        this.debugLineWidth = 4;
         this.debugVisualsEnabled = false;
     }
 
+    /**
+     * @param {boolean} state
+     */
     toggleDebugVisuals(state) {
         this.debugVisualsEnabled = state ?? !this.debugVisualsEnabled;
     }
@@ -93,7 +164,7 @@ class Point {
             this.initialLocation = this.currentLocation;
             this.locationDelta = 0;
 
-            const travelDistance = randomFromInclusiveRange(50, 500);
+            const travelDistance = randomFromInclusiveRange(100, 500);
             const travelBox = relativeBindingBox(this.currentLocation, this.canvas, travelDistance);
 
             this.desiredLocation = {
@@ -102,7 +173,7 @@ class Point {
             };
 
             this.desiredBezierPoints = [];
-            for (let i = 0; i < randomFromInclusiveRange(1, 3); i++) {
+            for (let i = 0; i < randomFromInclusiveRange(1, 5); i++) {
                 this.desiredBezierPoints.push({
                     x: clamp(Math.random() * travelBox.width + travelBox.a.x, 0, this.canvas.width),
                     y: clamp(Math.random() * travelBox.height + travelBox.a.y, 0, this.canvas.height),
@@ -125,7 +196,7 @@ class Point {
                 // draw line
                 this.context.beginPath();
                 this.context.strokeStyle = '#ffffff';
-                this.context.lineWidth = 5;
+                this.context.lineWidth = this.debugLineWidth;
                 this.context.moveTo(previousLocationToTravel.x, previousLocationToTravel.y);
                 this.context.lineTo(locationToTravel.x, locationToTravel.y);
                 this.context.closePath();
@@ -157,12 +228,12 @@ class Point {
 
             // draw path line
             let lastLocation = this.initialLocation;
-            for (let i = 0; i < this.locationDeltaLimit; i += 1) {
+            for (let i = 0; i <= this.locationDeltaLimit; i += 1) {
                 const newLocation = multiBezier(this.initialLocation, this.desiredBezierPoints, this.desiredLocation, i / this.locationDeltaLimit);
 
                 this.context.beginPath();
                 this.context.strokeStyle = this.debugColor;
-                this.context.lineWidth = 5;
+                this.context.lineWidth = this.debugLineWidth;
                 this.context.moveTo(lastLocation.x, lastLocation.y);
                 this.context.lineTo(newLocation.x, newLocation.y);
                 this.context.closePath();
@@ -192,6 +263,11 @@ class Point {
 class WireFrame {
     points = [];
 
+    /**
+     * @param {HTMLCanvasElement} canvas
+     * @param {string} color
+     * @param {number} renderDistance
+     */
     constructor(canvas, color, renderDistance) {
         this.canvas = canvas;
         this.context = canvas.getContext('2d');
@@ -200,10 +276,16 @@ class WireFrame {
         this.renderDistance = renderDistance;
     }
 
+    /**
+     * @param {Point} point
+     */
     addPoint(point) {
         this.points.push(point);
     }
 
+    /**
+     * @param {number} numPoints
+     */
     addPoints(numPoints) {
         for (let i = 0; i < numPoints; i++) {
             const x = Math.random() * this.canvas.width;
@@ -249,11 +331,17 @@ class WireFrame {
 
 //------------------------------------------------------------//
 
+/**
+ * @param {HTMLCanvasElement} canvas
+ */
 function resizeCanvas(canvas) {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 }
 
+/**
+ * @param {HTMLElement} parent
+ */
 function createCanvas(parent) {
     const canvas = document.createElement('canvas');
 
@@ -264,11 +352,11 @@ function createCanvas(parent) {
     return canvas;
 }
 
-async function main() {
-    const mainBox = document.querySelector('#main');
-    if (!mainBox) throw new Error('Unable to locate #main');
-
-    const canvas = createCanvas(mainBox);
+/**
+ * @param {HTMLElement} parent
+ */
+export async function startWireframes(parent) {
+    const canvas = createCanvas(parent);
     resizeCanvas(canvas);
 
     const wireFrame = new WireFrame(canvas, '#ff5500', 100);
@@ -278,13 +366,25 @@ async function main() {
         resizeCanvas(canvas);
     });
 
-    window.addEventListener('click', (event) => {
+    window.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+
         const canvasBox = canvas.getBoundingClientRect();
 
-        const x = event.clientX * canvas.width / canvasBox.width;
-        const y = event.clientY * canvas.height / canvasBox.height;
+        const pointerPosition = {
+            x: event.touches?.[0]?.clientX ?? event.clientX,
+            y: event.touches?.[0]?.clientY ?? event.clientY,
+        };
 
-        const point = new Point(canvas, x, y, '#ff5500');
+        const pointerPositionRelativeToCanvas = {
+            x: pointerPosition.x - canvasBox.x,
+            y: pointerPosition.y - canvasBox.y,
+        };
+
+        const pointX = pointerPositionRelativeToCanvas.x * canvas.width / canvasBox.width;
+        const pointY = pointerPositionRelativeToCanvas.y * canvas.height / canvasBox.height;
+
+        const point = new Point(canvas, pointX, pointY, '#ff5500');
         point.toggleDebugVisuals(true);
 
         wireFrame.addPoint(point);
@@ -295,5 +395,3 @@ async function main() {
         await delay(5_000);
     }
 }
-
-main();

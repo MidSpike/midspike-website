@@ -16,8 +16,10 @@
                 }
             }
             .navbar-widgets {
-                padding-left: 0px !important;
-                padding-right: 0px !important;
+                .navbar-widget {
+                    aspect-ratio: 1 / 1 !important;
+                    padding: 0px !important;
+                }
             }
         }
     }
