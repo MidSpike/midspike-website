@@ -103,7 +103,6 @@ function multiBezier(start, interruptions, stop, delta) {
  */
 
 /**
- * 
  * @param {TwoDimensionalCoordinate} centerPoint
  * @param {HTMLCanvasElement} canvas
  * @param {number} apothem the distance from the center point to the edge of the box
@@ -175,15 +174,28 @@ class Point {
             this.desiredBezierPoints = [];
             for (let i = 0; i < randomFromInclusiveRange(1, 5); i++) {
                 this.desiredBezierPoints.push({
-                    x: clamp(Math.random() * travelBox.width + travelBox.a.x, 0, this.canvas.width),
-                    y: clamp(Math.random() * travelBox.height + travelBox.a.y, 0, this.canvas.height),
+                    x: clamp(
+                        Math.random() * travelBox.width + travelBox.a.x,
+                        0,
+                        this.canvas.width
+                    ),
+                    y: clamp(
+                        Math.random() * travelBox.height + travelBox.a.y,
+                        0,
+                        this.canvas.height
+                    ),
                 });
             }
         }
 
         // move to the next location
         this.locationDelta += 1;
-        this.currentLocation = multiBezier(this.initialLocation, this.desiredBezierPoints, this.desiredLocation, this.locationDelta / this.locationDeltaLimit);
+        this.currentLocation = multiBezier(
+            this.initialLocation,
+            this.desiredBezierPoints,
+            this.desiredLocation,
+            this.locationDelta / this.locationDeltaLimit
+        );
 
         // debugging visuals
         if (this.debugVisualsEnabled) {
@@ -229,7 +241,12 @@ class Point {
             // draw path line
             let lastLocation = this.initialLocation;
             for (let i = 0; i <= this.locationDeltaLimit; i += 1) {
-                const newLocation = multiBezier(this.initialLocation, this.desiredBezierPoints, this.desiredLocation, i / this.locationDeltaLimit);
+                const newLocation = multiBezier(
+                    this.initialLocation,
+                    this.desiredBezierPoints,
+                    this.desiredLocation,
+                    i / this.locationDeltaLimit
+                );
 
                 this.context.beginPath();
                 this.context.strokeStyle = this.debugColor;
@@ -305,7 +322,10 @@ class WireFrame {
             for (const otherPoint of this.points) {
                 if (otherPoint === point) continue;
 
-                const distanceBetween = Math.sqrt(Math.pow(point.currentLocation.x - otherPoint.currentLocation.x, 2) + Math.pow(point.currentLocation.y - otherPoint.currentLocation.y, 2));
+                const distanceBetween = Math.sqrt(
+                    Math.pow(point.currentLocation.x - otherPoint.currentLocation.x, 2) +
+                    Math.pow(point.currentLocation.y - otherPoint.currentLocation.y, 2)
+                );
                 if (distanceBetween < this.renderDistance) {
                     if (closePoints.length > 5) continue;
 
@@ -353,6 +373,21 @@ function createCanvas(parent) {
 }
 
 /**
+ * @param {HTMLElement} descendant
+ * @param {HTMLElement} ancestor
+ */
+function isDescendantOfAncestor(descendant, ancestor) {
+    let node = descendant.parentNode;
+    while (node !== null) {
+        if (node === ancestor) return true;
+
+        node = node.parentNode;
+    }
+
+    return false;
+}
+
+/**
  * @param {HTMLElement} parent
  */
 export async function startWireframes(parent) {
@@ -367,6 +402,8 @@ export async function startWireframes(parent) {
     });
 
     window.addEventListener('pointerdown', (event) => {
+        if (!isDescendantOfAncestor(event.target, parent)) return;
+
         event.preventDefault();
 
         const canvasBox = canvas.getBoundingClientRect();
